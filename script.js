@@ -1,63 +1,40 @@
+/** 
+ * CONFIGURATION: Paste your Apps Script Web App URL below 
+ */
 const API_URL = "https://script.google.com/macros/s/AKfycbzaNi6UY67DS7OXV4cCNhikTlM4iJkZ5Qfx1rhrJ8l3Zba92PSDnqElOlTFdg1XpylakA/exec"; 
 
-// Global State
+// 1. GLOBAL STATE
 let allProducts = [];
 let designData = { status: 'open', categoryImages: {} };
 let allLivraison = [];
 let cart = JSON.parse(localStorage.getItem('pharmaCart')) || [];
 let favorites = JSON.parse(localStorage.getItem('pharmaFavs')) || [];
+let currentPage = 1;
 const itemsPerPage = 30;
 const categories = ["COSMETIQUE", "Hygiène Corporelle", "Huiles essentielles", "DIETETIQUE", "ARTICLE BEBE", "DISPOSITIFS MÉDICAUX", "ORTHOPÉDIQUE"];
 
-/**
- * 1. INITIALIZATION & DATA FETCHING
- */
-window.onload = function() {
-    // Strategy: Load from phone cache immediately so it opens in 0 seconds
-    const cached = localStorage.getItem('pharma_cache');
-    if (cached) {
-        try {
-            renderWithData(JSON.parse(cached));
-            hideLoader();
-        } catch(e) { console.log("Cache error"); }
-    }
+// 2. HELPER FUNCTIONS (Defined first to prevent ReferenceErrors)
 
-    // Background fetch from Google to update prices/stock
-    fetch(API_URL, { redirect: 'follow' })
-    .then(response => {
-        if (!response.ok) throw new Error("Network error");
-        return response.json();
-    })
-    .then(data => {
-        allProducts = data.products || [];
-        designData = data.design || designData;
-        allLivraison = data.livraisons || [];
-        
-        // Save to cache for next time
-        localStorage.setItem('pharma_cache', JSON.stringify(data));
-        
-        renderWithData(data);
-        hideLoader();
-    })
-    .catch(err => {
-        console.error("Fetch failed:", err);
-        if (!localStorage.getItem('pharma_cache')) {
-            document.getElementById('loader-shell').innerHTML = 
-            `<div style="padding:40px; text-align:center; color:red; font-family:sans-serif;">
-                <b>Erreur de connexion</b><br>Vérifiez votre connexion internet.<br><br>
-                <button onclick="location.reload()" style="padding:10px; background:#00a86b; color:white; border:none; border-radius:8px;">Réessayer</button>
-            </div>`;
-        }
-    });
-};
+function formatDriveUrl(url) {
+    if (!url) return '';
+    const idMatch = url.toString().match(/[-\w]{25,}/);
+    return idMatch ? `https://lh3.googleusercontent.com/d/${idMatch[0]}` : url;
+}
 
-function renderWithData(data) {
-    allProducts = data.products || [];
-    designData = data.design || designData;
-    allLivraison = data.livraisons || [];
-    if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
-    updateBadges();
-    showPage('home');
+function normalizeStr(s) {
+    if(!s) return "";
+    return s.toString().toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function isMatch(s1, s2) {
+    return normalizeStr(s1) === normalizeStr(s2);
+}
+
+function updateBadges() {
+    const cartBadge = document.getElementById('cart-count');
+    const favBadge = document.getElementById('fav-count');
+    if(cartBadge) cartBadge.innerText = cart.reduce((a, b) => a + b.qty, 0);
+    if(favBadge) favBadge.innerText = favorites.length;
 }
 
 function hideLoader() {
@@ -68,30 +45,43 @@ function hideLoader() {
     }
 }
 
-/**
- * 2. NAVIGATION LOGIC
- */
-function showPage(page, param) {
-    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-    if (page === 'home') renderHome();
-    else if (page === 'category') renderCategory(param);
-    else if (page === 'product') renderProductDetail(param);
-    else if (page === 'checkout') renderCheckout();
-    else if (page === 'favorites') renderFavorites();
-    else if (page === 'search') renderSearch();
-    
-    document.getElementById(page + '-page').style.display = 'block';
-    window.scrollTo(0,0);
+function toggleTheme() {
+    const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    const themeIcon = document.querySelector('.theme-toggle');
+    if(themeIcon) themeIcon.className = next === 'dark' ? 'fas fa-sun theme-toggle' : 'fas fa-moon theme-toggle';
 }
 
-/**
- * 3. RENDERERS
- */
+// 3. RENDER FUNCTIONS
+
+function productCard(p) {
+    const isF = favorites.includes(p.name);
+    const avail = !p.availability || isMatch(p.availability, 'disponible');
+    const closed = designData.status === 'closed';
+    const safeName = (p.name || "").replace(/'/g, "\\'");
+
+    return `
+      <div class="product-card" onclick="showPage('product', '${safeName}')">
+        <div class="fav-heart ${isF ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav('${safeName}', this)">
+          <i class="${isF ? 'fas' : 'far'} fa-heart"></i>
+        </div>
+        <img src="${formatDriveUrl(p.image)}" class="product-img" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=PH'">
+        <div class="product-info">
+          <div class="product-name">${p.name}</div>
+          <div class="product-price">${p.price.toFixed(2)} DA</div>
+          <button class="btn" onclick="event.stopPropagation(); addToCart('${safeName}')" ${!avail || closed ? 'disabled' : ''}>
+            ${closed ? 'Fermé' : (avail ? 'Ajouter' : 'Rupture')}
+          </button>
+        </div>
+      </div>`;
+}
+
 function renderHome() {
-    let h = designData.status === 'closed' ? '<div class="status-stripe">Boutique fermée temporairement</div>' : '';
-    h += `<div class="banner" style="background-image: url('${formatDriveUrl(designData.banner)}')"></div>`;
+    const bannerUrl = formatDriveUrl(designData.banner);
+    let h = designData.status === 'closed' ? '<div class="status-stripe">BOUTIQUE FERMÉE TEMPORAIREMENT</div>' : '';
     
-    // Round Category Scroll
+    h += `<div class="banner" style="background-image: url('${bannerUrl}')"></div>`;
     h += `<div class="category-scroll">`;
     categories.forEach(cat => {
         const img = formatDriveUrl(designData.categoryImages[cat.trim()] || "");
@@ -101,74 +91,125 @@ function renderHome() {
     });
     h += `</div><div class="container">`;
 
-    // Featured Preview Sections
+    // Category Preview Sections
     categories.forEach(cat => {
         const prods = allProducts.filter(p => isMatch(p.category, cat)).slice(0, 4);
         if(prods.length > 0) {
-            h += `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;"><b>${cat}</b><span style="color:var(--primary); font-size:0.7rem; font-weight:bold" onclick="showPage('category', '${cat.replace(/'/g, "\\'")}')">VOIR TOUT</span></div>
-                 <div class="product-grid" style="margin-top:10px">${prods.map(p => productCard(p)).join('')}</div>`;
+            h += `<div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                    <b style="text-transform:uppercase; font-size:0.8rem;">${cat}</b>
+                    <span style="color:var(--primary); font-size:0.7rem; font-weight:bold; cursor:pointer;" onclick="showPage('category', '${cat.replace(/'/g, "\\'")}')">VOIR TOUT</span>
+                  </div>
+                  <div class="product-grid" style="margin-top:10px">${prods.map(p => productCard(p)).join('')}</div>`;
         }
     });
 
-    h += `<div style="margin-top:30px"><b>Catalogue complet</b></div><div class="product-grid" id="main-grid" style="margin-top:10px"></div></div>`;
-    document.getElementById('home-page').innerHTML = h;
-    document.getElementById('main-grid').innerHTML = allProducts.slice(0, 30).map(i => productCard(i)).join('');
-}
-
-function productCard(p) {
-    const isF = favorites.includes(p.name);
-    const avail = !p.availability || isMatch(p.availability, 'disponible');
-    const closed = designData.status === 'closed';
-    const n = (p.name || "").replace(/'/g, "\\'");
-    return `<div class="product-card" onclick="showPage('product', '${n}')">
-        <div class="fav-heart ${isF?'active':''}" onclick="event.stopPropagation(); toggleFav('${n}', this)">
-          <i class="${isF?'fas':'far'} fa-heart"></i></div>
-        <img src="${formatDriveUrl(p.image)}" class="product-img" loading="lazy">
-        <div class="product-info"><div class="product-name">${p.name}</div><div class="product-price">${p.price.toFixed(2)} DA</div>
-          <button class="btn" ${!avail || closed ? 'disabled':''} onclick="event.stopPropagation(); addToCart('${n}')">${closed?'Fermé':(avail?'Ajouter':'Rupture')}</button></div></div>`;
-}
-
-function renderCheckout() {
-    let sub = cart.reduce((acc, i) => acc + ((allProducts.find(p=>p.name===i.name)||{price:0}).price*i.qty), 0);
-    const items = cart.map((item, idx) => {
-        const p = allProducts.find(x => x.name === item.name);
-        return `<div style="display:flex; justify-content:space-between; background:var(--card); padding:10px; margin-bottom:5px; border-radius:10px; border:1px solid var(--border)">
-                <div style="font-size:0.8rem"><b>${p.name}</b><br>${p.price.toFixed(2)} DA x ${item.qty}</div>
-                <i class="fas fa-trash" onclick="removeItem(${idx})" style="color:red; cursor:pointer"></i></div>`;
-    }).join('');
-    const wilayas = allLivraison.map(l => `<option value="${l.wilaya}">${l.wilaya}</option>`).join('');
+    h += `<div style="margin-top:40px; border-top:1px solid var(--border); padding-top:20px;"><b>Catalogue complet</b></div>
+          <div class="product-grid" id="main-grid" style="margin-top:15px"></div>
+          <div id="pagination-ctrl" class="pagination"></div></div>`;
     
-    document.getElementById('checkout-page').innerHTML = `<div class="container">
-      <div class="return-bar" onclick="showPage('home')">← RETOUR BOUTIQUE</div>
-      <h2>Votre Panier</h2>${items || '<p>Vide</p>'}
-      <div style="background:var(--card); padding:15px; border-radius:15px; margin-top:15px; border:1px solid var(--border)">
-        <select id="wilaya-select" onchange="updateTotal()"><option value="">Choisir Wilaya...</option>${wilayas}</select>
-        <select id="method-select" onchange="updateTotal()"><option value="domicile">Domicile</option><option value="relais">Relais</option><option value="magasin">Magasin</option></select>
-        <div style="display:flex; justify-content:space-between; margin-top:10px;"><span>Sous-total</span><span>${sub.toFixed(2)} DA</span></div>
-        <div style="display:flex; justify-content:space-between;"><span>Livraison</span><span id="shipping-val">0.00 DA</span></div>
-        <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--primary); font-size:1.1rem; margin-top:10px;"><span>TOTAL</span><span id="total-val">${sub.toFixed(2)} DA</span></div>
-      </div>
-      <form onsubmit="submitOrder(event)" ${!cart.length || designData.status === 'closed' ?'style="display:none"':''} style="margin-top:20px">
-        <input type="text" name="name" placeholder="Nom Complet" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="tel" name="phone" placeholder="Téléphone" required>
-        <textarea name="address" id="addr-field" placeholder="Adresse" required rows="2"></textarea>
-        <button type="submit" class="btn" style="background:#ff4757; padding:15px">COMMANDER</button></form></div>`;
+    document.getElementById('home-page').innerHTML = h;
+    changePage(1);
 }
 
-/**
- * 4. ORDERING & CART LOGIC
- */
+function changePage(p) {
+    currentPage = p;
+    const total = Math.ceil(allProducts.length / itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    const items = allProducts.slice(start, start + itemsPerPage);
+    
+    const grid = document.getElementById('main-grid');
+    if(grid) grid.innerHTML = items.map(i => productCard(i)).join('');
+    
+    const ctrl = document.getElementById('pagination-ctrl');
+    if (ctrl && total > 1) {
+        ctrl.innerHTML = `
+            <button class="pg-nav-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Préc.</button>
+            <span style="font-weight:bold; font-size:0.8rem">Page ${currentPage}/${total}</span>
+            <button class="pg-nav-btn" onclick="changePage(${currentPage + 1})" ${currentPage === total ? 'disabled' : ''}>Suiv.</button>`;
+    }
+}
+
+function showPage(page, param = null) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    
+    if (page === 'home') renderHome();
+    else if (page === 'category') renderCategory(param);
+    else if (page === 'product') renderProductDetail(param);
+    else if (page === 'checkout') renderCheckout();
+    else if (page === 'favorites') renderFavorites();
+    else if (page === 'search') renderSearch();
+    
+    const target = document.getElementById(page + '-page');
+    if(target) target.style.display = 'block';
+    window.scrollTo(0,0);
+}
+
+// 4. MAIN DATA LOADING LOGIC
+
+function renderWithData(data) {
+    allProducts = data.products || [];
+    designData = data.design || designData;
+    allLivraison = data.livraisons || [];
+    
+    // Set Theme
+    if(localStorage.getItem('theme') === 'dark') {
+        document.body.setAttribute('data-theme', 'dark');
+    }
+    
+    updateBadges();
+    showPage('home');
+}
+
+window.onload = function() {
+    // Attempt cache load
+    const cachedStore = localStorage.getItem('pharma_cache');
+    if (cachedStore) {
+        try {
+            renderWithData(JSON.parse(cachedStore));
+            hideLoader();
+        } catch(e) { console.log("Cache error"); }
+    }
+
+    // Fetch from API
+    fetch(API_URL, { redirect: 'follow' })
+    .then(response => {
+        if (!response.ok) throw new Error("Network error");
+        return response.json();
+    })
+    .then(data => {
+        localStorage.setItem('pharma_cache', JSON.stringify(data));
+        renderWithData(data);
+        hideLoader();
+    })
+    .catch(err => {
+        console.error("Fetch failed:", err);
+        if (!localStorage.getItem('pharma_cache')) {
+            document.getElementById('loader-shell').innerHTML = 
+            `<div style="padding:40px; text-align:center; color:red; font-family:sans-serif;">
+                <b>Erreur de connexion</b><br><small>${err.message}</small><br><br>
+                <button onclick="location.reload()" style="padding:10px; background:#00a86b; color:white; border:none; border-radius:8px;">Réessayer</button>
+            </div>`;
+        }
+    });
+};
+
+// 5. CART & ORDERING
+
 function updateTotal() {
-    const wil = document.getElementById('wilaya-select').value;
+    const wilName = document.getElementById('wilaya-select').value;
     const met = document.getElementById('method-select').value;
     const sub = cart.reduce((acc, i) => acc + ((allProducts.find(p=>p.name===i.name)||{price:0}).price*i.qty), 0);
     let ship = 0;
     const addr = document.getElementById('addr-field');
-    if(met === 'magasin') { addr.value = "RETRAIT MAGASIN"; }
-    else { if(addr.value === "RETRAIT MAGASIN") addr.value = "";
-      const data = allLivraison.find(l => l.wilaya === wil);
-      if(data) ship = (met === 'domicile') ? data.dPrice : data.rPrice;
+
+    if(met === 'magasin') {
+        addr.value = "RETRAIT MAGASIN";
+        addr.readOnly = true;
+    } else {
+        addr.readOnly = false;
+        if(addr.value === "RETRAIT MAGASIN") addr.value = "";
+        const data = allLivraison.find(l => l.wilaya === wilName);
+        if(data) ship = (met === 'domicile') ? data.dPrice : data.rPrice;
     }
     document.getElementById('shipping-val').innerText = ship.toFixed(2) + " DA";
     document.getElementById('total-val').innerText = (sub + ship).toFixed(2) + " DA";
@@ -181,51 +222,21 @@ function submitOrder(e) {
     const method = document.getElementById('method-select').value;
     
     data.wilaya = document.getElementById('wilaya-select').value || "Magasin";
-    data.products = cart.map(i => i.name + " (x" + i.qty + ")").join(', ');
+    data.products = cart.map(i => `${i.name} (x${i.qty})`).join(', ');
     data.orderTotal = document.getElementById('total-val').innerText;
     data.shippingMethod = method;
 
-    // OPTIMISTIC UI: Show success instantly while uploading in background
-    const msg = (method === 'magasin') ? "Nous vous attendons en magasin !" : "Commande enregistrée ! On vous appelle bientôt.";
+    // Show Success instantly
+    const msg = (method === 'magasin') ? "Nous vous attendons en pharmacie !" : "Commande enregistrée ! On vous appelle bientôt.";
     document.getElementById('success-page').innerHTML = `<div class="container" style="text-align:center; padding-top:50px;"><div class="success-card" style="background:var(--card); padding:30px; border-radius:20px; border:1px solid var(--border)"><i class="fas fa-check-circle" style="font-size:4rem; color:var(--primary); margin-bottom:20px;"></i><h1>Merci !</h1><p>${msg}</p><button class="btn" onclick="location.reload()">RETOUR</button></div></div>`;
     showPage('success');
     
-    // Async Background Post
+    // Upload in background
     fetch(API_URL, { method: "POST", mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data) });
 
-    cart = []; 
-    localStorage.removeItem('pharmaCart'); 
+    cart = [];
+    localStorage.removeItem('pharmaCart');
     updateBadges();
-}
-
-/**
- * 5. UTILITIES
- */
-function isMatch(s1, s2) {
-    if(!s1 || !s2) return false;
-    const cl = (s) => s.toString().toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return cl(s1) === cl(s2);
-}
-
-function formatDriveUrl(url) {
-    if (!url) return '';
-    const id = url.toString().match(/[-\w]{25,}/);
-    return id ? 'https://lh3.googleusercontent.com/d/' + id[0] : url;
-}
-
-function updateBadges() {
-    document.getElementById('cart-count').innerText = cart.reduce((a, b) => a + b.qty, 0);
-    document.getElementById('fav-count').innerText = favorites.length;
-}
-
-function toggleFav(n, el) {
-    const idx = favorites.indexOf(n);
-    if(idx > -1) { favorites.splice(idx,1); el.classList.remove('active'); el.querySelector('i').className='far fa-heart'; }
-    else { favorites.push(n); el.classList.add('active'); el.querySelector('i').className='fas fa-heart'; }
-    localStorage.setItem('pharmaFavs', JSON.stringify(favorites));
-    updateBadges();
-    const navH = document.getElementById('fav-btn-nav');
-    navH.classList.add('animate-bounce'); setTimeout(()=>navH.classList.remove('animate-bounce'), 400);
 }
 
 function addToCart(n) {
@@ -234,22 +245,66 @@ function addToCart(n) {
     localStorage.setItem('pharmaCart', JSON.stringify(cart));
     updateBadges();
     const cbtn = document.getElementById('cart-btn-nav');
-    cbtn.classList.add('animate-bounce'); setTimeout(()=>cbtn.classList.remove('animate-bounce'), 400);
+    if(cbtn) {
+        cbtn.classList.add('animate-bounce'); 
+        setTimeout(()=>cbtn.classList.remove('animate-bounce'), 400);
+    }
 }
 
-function removeItem(idx) { cart.splice(idx,1); localStorage.setItem('pharmaCart', JSON.stringify(cart)); updateBadges(); renderCheckout(); }
+function toggleFav(n, el) {
+    const idx = favorites.indexOf(n);
+    if(idx > -1) { 
+        favorites.splice(idx,1); 
+        el.classList.remove('active'); 
+        el.querySelector('i').className='far fa-heart'; 
+    } else { 
+        favorites.push(n); 
+        el.classList.add('active'); 
+        el.querySelector('i').className='fas fa-heart'; 
+    }
+    localStorage.setItem('pharmaFavs', JSON.stringify(favorites));
+    updateBadges();
+    const navH = document.getElementById('fav-btn-nav');
+    if(navH) {
+        navH.classList.add('animate-bounce'); 
+        setTimeout(()=>navH.classList.remove('animate-bounce'), 400);
+    }
+}
 
-function toggleTheme() {
-    const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    const icon = document.querySelector('.theme-toggle');
-    if(icon) icon.className = next === 'dark' ? 'fas fa-sun theme-toggle' : 'fas fa-moon theme-toggle';
+function removeItem(idx) {
+    cart.splice(idx,1);
+    localStorage.setItem('pharmaCart', JSON.stringify(cart));
+    updateBadges();
+    renderCheckout();
+}
+
+// 6. SUB-PAGE RENDERERS
+
+function renderCheckout() {
+    let sub = cart.reduce((acc, i) => acc + ((allProducts.find(p=>p.name===i.name)||{price:0}).price*i.qty), 0);
+    const itemsH = cart.map((item, idx) => {
+        const p = allProducts.find(x => x.name === item.name);
+        return `<div style="display:flex; justify-content:space-between; background:var(--card); padding:10px; margin-bottom:5px; border-radius:10px; border:1px solid var(--border)">
+                <div style="font-size:0.8rem"><b>${p.name}</b><br>${p.price.toFixed(2)} DA x ${item.qty}</div>
+                <i class="fas fa-trash" onclick="removeItem(${idx})" style="color:red; cursor:pointer"></i></div>`;
+    }).join('');
+    const wilayas = allLivraison.map(l => `<option value="${l.wilaya}">${l.wilaya}</option>`).join('');
+    document.getElementById('checkout-page').innerHTML = `<div class="container"><div class="return-bar" onclick="showPage('home')">← RETOUR</div><h2>Panier</h2>${itemsH || '<p>Vide</p>'}
+      <div style="background:var(--card); padding:15px; border-radius:15px; margin-top:15px; border:1px solid var(--border)">
+        <select id="wilaya-select" onchange="updateTotal()"><option value="">Wilaya...</option>${wilayas}</select>
+        <select id="method-select" onchange="updateTotal()"><option value="domicile">Domicile</option><option value="relais">Relais</option><option value="magasin">Magasin</option></select>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;"><span>Produits</span><span>${sub.toFixed(2)} DA</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>Livraison</span><span id="shipping-val">0.00 DA</span></div>
+        <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--primary); font-size:1.1rem; margin-top:10px;"><span>TOTAL</span><span id="total-val">${sub.toFixed(2)} DA</span></div>
+      </div>
+      <form onsubmit="submitOrder(event)" ${!cart.length || designData.status === 'closed' ?'style="display:none"':''} style="margin-top:20px">
+        <input type="text" name="name" placeholder="Nom Complet" required><input type="email" name="email" placeholder="Email" required><input type="tel" name="phone" placeholder="Téléphone" required><textarea name="address" id="addr-field" placeholder="Adresse" required rows="2"></textarea>
+        <button type="submit" class="btn" style="background:#ff4757">COMMANDER</button></form></div>`;
 }
 
 function renderCategory(cat) {
     const filtered = allProducts.filter(p => isMatch(p.category, cat));
-    document.getElementById('category-page').innerHTML = `<div class="container"><div class="return-bar" onclick="showPage('home')">← RETOUR</div><b>${cat}</b><div class="product-grid" style="margin-top:15px">${filtered.map(p => productCard(p)).join('')}</div></div>`;
+    document.getElementById('category-page').innerHTML = `<div class="container"><div class="return-bar" onclick="showPage('home')">← RETOUR</div><div style="margin-bottom:15px"><b>${cat}</b></div><div class="product-grid">${filtered.map(p => productCard(p)).join('')}</div></div>`;
 }
 
 function renderProductDetail(name) {
@@ -271,7 +326,6 @@ function renderSearch() {
 
 function performSearch(q) {
     if (q.length < 2) { document.getElementById('search-results').innerHTML = ''; return; }
-    const qLower = q.toLowerCase();
-    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(qLower) || p.category.toLowerCase().includes(qLower));
+    const filtered = allProducts.filter(p => normalizeStr(p.name).includes(normalizeStr(q)));
     document.getElementById('search-results').innerHTML = filtered.map(p => productCard(p)).join('');
 }
