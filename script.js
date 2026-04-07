@@ -1,4 +1,4 @@
-const API_URL = "15zjNArsPaSwIhXP2392SpEWjrlYZWOzF8s4Yn_p_fPQjxTYdjXZhUxhm"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbyFAPbWn01aad0bn12HMjoBt9B_8ov6LW0SNEOWPGScJHhzkZJAKjs7pmXs4mLJHuhz5g/exec"; 
 
 let allProducts = [];
 let designData = {};
