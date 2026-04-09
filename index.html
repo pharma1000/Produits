@@ -17,22 +17,24 @@
 
 <nav class="navbar">
     <div class="logo-container" onclick="showPage('home')">
-        <!-- Logo tripled in size relative to text -->
         <img id="site-logo" src="https://lh3.googleusercontent.com/d/1Fsjnz7niting6IxQmdvx5uAw1COBqJDb" alt="Pharma 1000">
         <span id="site-title">Pharma 1000</span>
     </div>
     <div class="nav-icons-group">
         <i class="fas fa-moon theme-toggle" onclick="toggleTheme()"></i>
-        <div class="icon-btn" onclick="showPage('search')"><i class="fas fa-search"></i></div>
+        <div class="icon-btn" onclick="showPage('search')">
+            <i class="fas fa-search"></i>
+        </div>
         <div id="fav-btn-nav" class="icon-btn" onclick="showPage('favorites')">
-            <i class="fas fa-heart"></i><span id="fav-count" class="badge">0</span>
+            <i class="fas fa-heart"></i>
+            <span id="fav-count" class="badge">0</span>
         </div>
         <div id="cart-btn-nav" class="icon-btn" onclick="showPage('checkout')">
-            <i class="fas fa-shopping-cart"></i><span id="cart-count" class="badge">0</span>
+            <i class="fas fa-shopping-cart"></i>
+            <span id="cart-count" class="badge">0</span>
         </div>
     </div>
 </nav>
-
     <div id="app">
         <div id="home-page" class="page"></div>
         <div id="category-page" class="page" style="display:none"></div>
