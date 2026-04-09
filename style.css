@@ -3,27 +3,87 @@
 
 body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; }
 
-/* NAVBAR WITH LOGO */
-.navbar { 
-    background: var(--card); 
-    padding: 10px 15px; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    position: sticky; 
-    top: 0; 
-    z-index: 1000; 
-    height: 65px; 
-    border-bottom: 1px solid var(--border); 
+/* --- Navigation Bar Layout --- */
+.navbar {
+    display: flex;
+    justify-content: space-between; /* Pushes logo left and icons right */
+    align-items: center;           /* Centers items vertically */
+    padding: 0 15px;               /* Side spacing */
+    height: 70px;                  /* Fixed height for a pro look */
+    background: var(--card);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--border);
+    box-sizing: border-box;
 }
-.logo-container { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-#site-logo { height: 48px; width: auto; object-fit: contain; } /* Tripled visual size */
-#site-title { font-weight: 700; color: var(--primary); font-size: 1.1rem; }
 
-.nav-icons-only { display: flex; align-items: center; gap: 18px; }
-.icon-btn, .theme-toggle { font-size: 1.2rem; color: var(--text); cursor: pointer; position: relative; }
-.badge { position: absolute; top: -7px; right: -9px; background: var(--accent); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; font-weight: bold; }
+/* --- Logo Side (Left) --- */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    flex-shrink: 0; /* Prevents logo from squishing on tiny screens */
+}
 
+#site-logo {
+    height: 50px;      /* Tripled visual size relative to standard icons */
+    width: auto;
+    object-fit: contain;
+}
+
+#site-title {
+    font-weight: 800;
+    color: var(--primary);
+    font-size: 1.1rem;
+    letter-spacing: -0.5px;
+    /* Hide title on very small phones if it crowds icons */
+}
+
+@media (max-width: 360px) {
+    #site-title { display: none; }
+}
+
+/* --- Icons Side (Right) --- */
+.nav-icons-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;         /* Space between the 4 icons */
+}
+
+.icon-btn, .theme-toggle {
+    position: relative;
+    font-size: 1.2rem;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;      /* Uniform touch area for mobile */
+    height: 35px;
+    transition: transform 0.2s ease;
+}
+
+.icon-btn:active, .theme-toggle:active {
+    transform: scale(0.9); /* Click feedback */
+}
+
+/* --- Badges (Numbers) --- */
+.badge {
+    position: absolute;
+    top: -5px;         /* Positioned exactly on corner of icon */
+    right: -5px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+    border: 2px solid var(--card); /* Makes it pop against the icon */
+    min-width: 12px;
+    text-align: center;
+}
 /* RED STATUS STRIPE */
 .status-stripe { 
     background: #ff4757 !important; 
