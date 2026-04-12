@@ -8,7 +8,7 @@
 
 body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
 
-/* Navbar Fixed */
+/* --- Navigation Bar --- */
 .navbar { 
     background: var(--card); padding: 0 15px; display: flex; 
     justify-content: space-between; align-items: center; 
@@ -23,7 +23,7 @@ body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); co
 .icon-btn { position: relative; font-size: 1.25rem; color: var(--text); cursor: pointer; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; }
 .badge { position: absolute; top: -5px; right: -5px; background: var(--accent); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; font-weight: bold; border: 2px solid var(--card); }
 
-/* Category Scroll Fix */
+/* --- Category Scroll --- */
 .category-scroll { 
     display: flex; overflow-x: auto; padding: 15px 10px; gap: 15px; 
     background: var(--card); border-bottom: 1px solid var(--border);
@@ -35,24 +35,17 @@ body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); co
 .cat-img img { width: 100%; height: 100%; object-fit: cover; }
 .cat-item span { font-size: 0.65rem; font-weight: 700; color: var(--text); line-height: 1.2; }
 
-/* Product Grid Fix */
+/* --- Product Layout --- */
 .container { padding: 10px; max-width: 1100px; margin: auto; }
-.product-grid { 
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 12px; 
-    margin-top: 10px;
-}
+.product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
 @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); } }
 
 .product-card { 
     background: var(--card); border-radius: 16px; overflow: hidden; 
     position: relative; border: 1px solid var(--border); 
-    display: flex; flex-direction: column; transition: 0.2s;
-    height: 100%;
+    display: flex; flex-direction: column; transition: 0.2s; height: 100%;
 }
 
-/* Red Heart on Left */
 .fav-heart { 
     position: absolute; top: 10px; left: 10px; z-index: 10;
     font-size: 1.3rem; color: #ccc; cursor: pointer;
@@ -62,24 +55,81 @@ body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); co
 }
 .fav-heart.active { color: #ff4757 !important; }
 
-.product-img { 
-    width: 100%; height: 150px; object-fit: contain; 
-    padding: 15px; background: white; box-sizing: border-box;
-}
+.product-img { width: 100%; height: 150px; object-fit: contain; padding: 15px; background: white; box-sizing: border-box; }
 .product-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
 .product-name { font-size: 0.85rem; font-weight: 600; height: 38px; overflow: hidden; color: var(--text); margin-bottom: 5px; }
 .product-price { color: var(--primary); font-weight: 700; font-size: 1rem; margin-bottom: 10px; }
 
-.btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
-.btn:disabled { background: #999; opacity: 0.5; }
+/* --- Buttons --- */
+.btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.btn:hover { filter: brightness(1.1); }
+.btn:active { transform: scale(0.96); }
+.btn:disabled { background: #999; opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* Status Stripe */
+/* --- MODERN STYLISH FORM FIELDS --- */
+input, select, textarea {
+    width: 100%;
+    padding: 16px 18px;
+    border: 2px solid var(--border);
+    border-radius: 16px; /* High rounded modern look */
+    font-size: 1rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    margin-bottom: 18px;
+    background: var(--card);
+    color: var(--text);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* Form Hover & Focus State */
+input:hover, select:hover, textarea:hover {
+    border-color: #cbd5e1;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary);
+    background: var(--card);
+    box-shadow: 0 0 0 4px rgba(0, 168, 107, 0.1); /* Subtle Brand Glow */
+    transform: translateY(-1px); /* Interaction feedback */
+}
+
+/* Stylish Placeholders */
+input::placeholder, textarea::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+input:focus::placeholder {
+    transform: translateX(10px); /* Moves text slightly on focus */
+    opacity: 0.4;
+}
+
+/* Dropdown styling */
+select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300a86b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 18px;
+    padding-right: 40px;
+    appearance: none;
+}
+
+/* --- Misc UI --- */
 .status-stripe { background: #ff4757 !important; color: white !important; text-align: center; padding: 12px; font-weight: bold; font-size: 0.85rem; width: 100%; }
-
-/* Return Bar */
 .return-bar { padding: 10px 0; color: var(--primary); font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 
 /* Loader */
 #loader-shell { position: fixed; inset: 0; background: #fff; z-index: 10000; display: flex; align-items: center; justify-content: center; }
 .spin { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #00a86b; border-radius: 50%; animation: rot 1s linear infinite; }
 @keyframes rot { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+@keyframes iconBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+.animate-bounce { animation: iconBounce 0.4s ease-out; }
+
+/* Error/Warning container for Minimum Order */
+#checkout-page p[style*="colo
