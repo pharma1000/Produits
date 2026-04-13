@@ -1,3 +1,15 @@
+/* Prevent horizontal scroll and fix box calculations */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    touch-action: pan-y; /* Allows vertical scrolling but prevents accidental side-swipes/zoom gestures */
+}
 :root { 
     --primary: #00a86b; --accent: #ff4757; --bg: #f8fafc; 
     --card: #ffffff; --text: #334155; --border: #e2e8f0; 
