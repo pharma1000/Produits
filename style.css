@@ -8,7 +8,7 @@ html, body {
     width: 100%;
     overflow-x: hidden;
     position: relative;
-    touch-action: pan-y; /* Allows vertical scrolling but prevents accidental side-swipes/zoom gestures */
+    touch-action: pan-y;
 }
 
 :root { 
@@ -36,7 +36,7 @@ body {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    position: fixed; /* Changed from sticky to fixed to ensure it stays visible */
+    position: fixed; 
     top: 0; 
     left: 0;
     width: 100%;
@@ -48,7 +48,7 @@ body {
 
 /* --- Content Offset for Fixed Navbar --- */
 #app {
-    margin-top: 70px; /* Matches navbar height so content starts below the bar */
+    margin-top: 70px; 
 }
 
 .logo-container { display: flex; align-items: center; gap: 10px; cursor: pointer; }
@@ -92,21 +92,46 @@ body {
 .fav-heart.active { color: #ff4757 !important; }
 
 .product-img { width: 100%; height: 150px; object-fit: contain; padding: 15px; background: white; box-sizing: border-box; }
-.product-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
+
+.product-info { 
+    padding: 12px; 
+    flex-grow: 1; 
+    display: flex; 
+    flex-direction: column; 
+}
+
 .product-name { 
     font-size: 0.85rem; 
     font-weight: 600; 
     color: var(--text); 
-    margin-bottom: 8px; 
+    margin-bottom: 4px; 
     line-height: 1.3;
     display: block;
     height: auto;
     overflow: visible;
 }
-.product-price { color: var(--primary); font-weight: 700; font-size: 1rem; margin-bottom: 10px; }
 
-/* --- Buttons --- */
-.btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.product-price { 
+    color: var(--primary); 
+    font-weight: 700; 
+    font-size: 1rem; 
+    margin-bottom: 12px; 
+}
+
+/* --- Buttons (Updated to align at bottom) --- */
+.btn { 
+    background: var(--primary); 
+    color: white; 
+    border: none; 
+    padding: 14px; 
+    border-radius: 12px; 
+    width: 100%; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    margin-top: auto; /* This forces the button to the bottom of the card */
+}
+
 .btn:hover { filter: brightness(1.1); }
 .btn:active { transform: scale(0.96); }
 .btn:disabled { background: #999; opacity: 0.5; cursor: not-allowed; transform: none; }
@@ -128,10 +153,7 @@ input, select, textarea {
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-input:hover, select:hover, textarea:hover {
-    border-color: #cbd5e1;
-}
-
+input:hover, select:hover, textarea:hover { border-color: #cbd5e1; }
 input:focus, select:focus, textarea:focus {
     border-color: var(--primary);
     background: var(--card);
@@ -139,17 +161,8 @@ input:focus, select:focus, textarea:focus {
     transform: translateY(-1px);
 }
 
-input::placeholder, textarea::placeholder {
-    color: #94a3b8;
-    font-weight: 400;
-    opacity: 0.7;
-    transition: all 0.3s ease;
-}
-
-input:focus::placeholder {
-    transform: translateX(10px);
-    opacity: 0.4;
-}
+input::placeholder, textarea::placeholder { color: #94a3b8; font-weight: 400; opacity: 0.7; transition: all 0.3s ease; }
+input:focus::placeholder { transform: translateX(10px); opacity: 0.4; }
 
 select {
     cursor: pointer;
