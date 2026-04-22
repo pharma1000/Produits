@@ -10,23 +10,47 @@ html, body {
     position: relative;
     touch-action: pan-y; /* Allows vertical scrolling but prevents accidental side-swipes/zoom gestures */
 }
+
 :root { 
     --primary: #00a86b; --accent: #ff4757; --bg: #f8fafc; 
     --card: #ffffff; --text: #334155; --border: #e2e8f0; 
 }
+
 [data-theme='dark'] { 
     --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --border: #334155; 
 }
 
-body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
-
-/* --- Navigation Bar --- */
-.navbar { 
-    background: var(--card); padding: 0 15px; display: flex; 
-    justify-content: space-between; align-items: center; 
-    position: sticky; top: 0; z-index: 1000; height: 70px; 
-    border-bottom: 1px solid var(--border); box-sizing: border-box;
+body { 
+    font-family: 'Segoe UI', sans-serif; 
+    margin: 0; 
+    background: var(--bg); 
+    color: var(--text); 
+    transition: 0.3s; 
+    overflow-x: hidden; 
 }
+
+/* --- Navigation Bar (Fixed to Top) --- */
+.navbar { 
+    background: var(--card); 
+    padding: 0 15px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    position: fixed; /* Changed from sticky to fixed to ensure it stays visible */
+    top: 0; 
+    left: 0;
+    width: 100%;
+    z-index: 1000; 
+    height: 70px; 
+    border-bottom: 1px solid var(--border); 
+    box-sizing: border-box;
+}
+
+/* --- Content Offset for Fixed Navbar --- */
+#app {
+    margin-top: 70px; /* Matches navbar height so content starts below the bar */
+}
+
 .logo-container { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 #site-logo { height: 50px; width: auto; object-fit: contain; }
 #site-title { font-weight: 800; color: var(--primary); font-size: 1.1rem; }
@@ -69,17 +93,17 @@ body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); co
 
 .product-img { width: 100%; height: 150px; object-fit: contain; padding: 15px; background: white; box-sizing: border-box; }
 .product-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
-/* --- Updated Product Name to show full text --- */
 .product-name { 
     font-size: 0.85rem; 
     font-weight: 600; 
     color: var(--text); 
     margin-bottom: 8px; 
-    line-height: 1.3;   /* Improves readability for multi-line names */
-    display: block;     /* Ensures it takes natural space */
-    height: auto;       /* Removes the 38px limit */
-    overflow: visible;  /* Shows all text */
-}.product-price { color: var(--primary); font-weight: 700; font-size: 1rem; margin-bottom: 10px; }
+    line-height: 1.3;
+    display: block;
+    height: auto;
+    overflow: visible;
+}
+.product-price { color: var(--primary); font-weight: 700; font-size: 1rem; margin-bottom: 10px; }
 
 /* --- Buttons --- */
 .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -92,7 +116,7 @@ input, select, textarea {
     width: 100%;
     padding: 16px 18px;
     border: 2px solid var(--border);
-    border-radius: 16px; /* High rounded modern look */
+    border-radius: 16px;
     font-size: 1rem;
     font-family: inherit;
     box-sizing: border-box;
@@ -104,7 +128,6 @@ input, select, textarea {
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-/* Form Hover & Focus State */
 input:hover, select:hover, textarea:hover {
     border-color: #cbd5e1;
 }
@@ -112,11 +135,10 @@ input:hover, select:hover, textarea:hover {
 input:focus, select:focus, textarea:focus {
     border-color: var(--primary);
     background: var(--card);
-    box-shadow: 0 0 0 4px rgba(0, 168, 107, 0.1); /* Subtle Brand Glow */
-    transform: translateY(-1px); /* Interaction feedback */
+    box-shadow: 0 0 0 4px rgba(0, 168, 107, 0.1);
+    transform: translateY(-1px);
 }
 
-/* Stylish Placeholders */
 input::placeholder, textarea::placeholder {
     color: #94a3b8;
     font-weight: 400;
@@ -125,11 +147,10 @@ input::placeholder, textarea::placeholder {
 }
 
 input:focus::placeholder {
-    transform: translateX(10px); /* Moves text slightly on focus */
+    transform: translateX(10px);
     opacity: 0.4;
 }
 
-/* Dropdown styling */
 select {
     cursor: pointer;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2300a86b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
@@ -151,6 +172,3 @@ select {
 
 @keyframes iconBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
 .animate-bounce { animation: iconBounce 0.4s ease-out; }
-
-/* Error/Warning container for Minimum Order */
-#checkout-page p[style*="colo
