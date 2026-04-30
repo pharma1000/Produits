@@ -1,7 +1,80 @@
-/** 
+/**
  * PHARMA 1000 - CORE ENGINE 2025
+ * With Clean URL Support for SEO & Deep Linking
  */
 const API_URL = "https://script.google.com/macros/s/AKfycbzaNi6UY67DS7OXV4cCNhikTlM4iJkZ5Qfx1rhrJ8l3Zba92PSDnqElOlTFdg1XpylakA/exec"; 
+
+// ============================================
+// CLEAN URL - SLUG HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Creates a URL-friendly slug from product name
+ * Example: "Noreva Actipur" → "noreva-actipur"
+ */
+function createSlug(productName) {
+    if (!productName) return '';
+    return productName
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[àáâãäå]/g, 'a')
+        .replace(/[èéêë]/g, 'e')
+        .replace(/[ìíîï]/g, 'i')
+        .replace(/[òóôõö]/g, 'o')
+        .replace(/[ùúûü]/g, 'u')
+        .replace(/[ç]/g, 'c')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+/**
+ * Finds a product by its URL slug
+ */
+function findProductBySlug(slug, products) {
+    if (!slug || !products) return null;
+    return products.find(p => createSlug(p.name) === slug) || null;
+}
+
+// ============================================
+// CLEAN URL - URL UPDATE FUNCTION
+// ============================================
+
+/**
+ * Updates URL using pushState (Clean URLs for SEO)
+ */
+function updateUrlForProduct(productName) {
+    if (!productName) return;
+    const slug = createSlug(productName);
+    const newUrl = `/${slug}`;
+    window.history.pushState({ product: productName }, '', newUrl);
+    document.title = `${productName} | Pharma-1000`;
+}
+
+/**
+ * Handles browser back/forward navigation
+ */
+function handleUrlNavigation() {
+    const path = window.location.pathname;
+    if (path === '/' || path === '/index.html' || path === '') {
+        showPage('home');
+        return;
+    }
+    const slug = path.replace(/^\//, '').replace(/\/$/, '');
+    if (!slug || slug.includes('.')) {
+        showPage('home');
+        return;
+    }
+    const product = findProductBySlug(slug, allProducts);
+    if (product) {
+        renderProductDetail(product.name);
+    } else {
+        showPage('home');
+    }
+}
 
 // 1. GLOBAL STATE
 let allProducts = [];
@@ -103,9 +176,20 @@ function changePage(p) {
 
 function showPage(page, param = null) {
     document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-    if (page === 'home') renderHome();
+    if (page === 'home') {
+        renderHome();
+        // Reset URL to root for home page
+        if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+            window.history.pushState({}, '', '/');
+            document.title = 'Pharma-1000 | Parapharmacie';
+        }
+    }
     else if (page === 'category') renderCategory(param);
-    else if (page === 'product') renderProductDetail(param);
+    else if (page === 'product') {
+        renderProductDetail(param);
+        // Update URL with product slug for SEO (Clean URL)
+        updateUrlForProduct(param);
+    }
     else if (page === 'checkout') renderCheckout();
     else if (page === 'favorites') renderFavorites();
     else if (page === 'search') renderSearch();
@@ -122,12 +206,38 @@ function initApp(data) {
     const icon = document.querySelector('.theme-toggle i'); if(icon) icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     updateBadges(); showPage('home');
 }
+// ============================================
+// CLEAN URL - BROWSER HISTORY NAVIGATION
+// ============================================
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (event) => {
+    handleUrlNavigation();
+});
+
 window.onload = function() {
     const cached = localStorage.getItem('pharma_cache');
     if (cached) { try { initApp(JSON.parse(cached)); hideLoader(); } catch(e){} }
     fetch(API_URL, { redirect: 'follow' }).then(res => res.json()).then(data => {
         localStorage.setItem('pharma_cache', JSON.stringify(data));
         initApp(data); hideLoader();
+        
+        // DEEP LINKING: Check URL on load and show product if slug present
+        // Handle both clean URL paths and query params from 404 redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSlug = urlParams.get('url');
+        if (urlSlug) {
+            const product = findProductBySlug(urlSlug, allProducts);
+            if (product) {
+                renderProductDetail(product.name);
+                // Clean up URL by replacing history state
+                window.history.replaceState({}, '', '/' + urlSlug);
+            } else {
+                showPage('home');
+            }
+        } else {
+            handleUrlNavigation();
+        }
     }).catch(err => { if(!cached) document.getElementById('loader-shell').innerHTML = "Erreur de connexion."; });
 };
 

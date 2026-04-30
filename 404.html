@@ -3,37 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page Not Found | Pharma-1000</title>
+    <title>404 - Page Not Found | Pharma-1000</title>
     <script>
-        // SPA Routing Redirect
-        // GitHub Pages 404.html - Redirect all routes to index.html for Clean URL support
+        // ====================================
+        // SPA ROUTING REDIRECT FOR GITHUB PAGES
+        // ====================================
+        // This file handles 404 errors and redirects to index.html
+        // while preserving the clean URL path for deep linking
         
-        // Get the current path
-        const currentPath = window.location.pathname;
-        
-        // Get the hash or search params if any
-        const hash = window.location.hash;
-        const search = window.location.search;
-        
-        // Build the redirect URL - preserve the path as a hash parameter for SPA routing
-        let redirectUrl = '/index.html';
-        
-        // If we're not already on index.html or root, preserve the path
-        if (currentPath !== '/' && currentPath !== '/index.html') {
-            // Pass the original path to index.html via hash or query
-            redirectUrl = '/index.html?redirect=' + encodeURIComponent(currentPath);
-        }
-        
-        // Additional preservation of hash and search
-        if (hash) {
-            redirectUrl += hash;
-        } else if (search) {
-            // If there was a search param, include it in the hash
-            redirectUrl += '?' + search.substring(1);
-        }
-        
-        // Perform the redirect
-        window.location.replace(redirectUrl);
+        (function() {
+            // Get the current path
+            var path = window.location.pathname;
+            
+            // Build redirect URL to index.html
+            // The index.html will handle the URL and load the correct product
+            var redirectUrl = '/index.html';
+            
+            // If not on root, preserve the path via query param for SPA handling
+            if (path !== '/' && path !== '/index.html') {
+                var slug = path.replace(/^\//, '').replace(/\/$/, '');
+                if (slug && slug.indexOf('.') === -1) {
+                    redirectUrl = '/index.html?url=' + encodeURIComponent(slug);
+                }
+            }
+            
+            // Redirect with replace to avoid history pollution
+            window.location.replace(redirectUrl);
+        })();
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -43,32 +39,48 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: white;
         }
         .container {
             text-align: center;
             padding: 2rem;
         }
-        h1 { font-size: 4rem; margin-bottom: 1rem; }
-        p { font-size: 1.25rem; margin-bottom: 2rem; }
+        h1 { font-size: 6rem; margin-bottom: 0.5rem; color: #e94560; }
+        h2 { font-size: 1.5rem; margin-bottom: 1rem; opacity: 0.9; }
+        p { font-size: 1.1rem; margin-bottom: 2rem; opacity: 0.7; }
         a {
-            background: white;
-            color: #667eea;
+            display: inline-block;
+            background: #e94560;
+            color: white;
             padding: 1rem 2rem;
             text-decoration: none;
-            border-radius: 4px;
+            border-radius: 50px;
             font-weight: bold;
-            transition: transform 0.2s;
+            transition: transform 0.3s, box-shadow 0.3s;
         }
-        a:hover { transform: scale(1.05); }
+        a:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+        }
+        .loading {
+            margin-top: 2rem;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>404</h1>
-        <p>Page introuvable. Redirection...</p>
-        <a href="/index.html">Retour à l'accueil</a>
+        <h2>Page introuvable</h2>
+        <p>Redirection vers la boutique...</p>
+        <div class="loading">
+            <a href="/index.html">Retour à la boutique</a>
+        </div>
     </div>
 </body>
 </html>
