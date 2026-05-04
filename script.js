@@ -70,6 +70,15 @@ const RiskTracker = {
         });
     },
     
+    checkGibberish(str) {
+        if (!str || str.length < 5) return false;
+        const vowels = str.match(/[aeiouyàéèêëîïôûù]/gi);
+        if (!vowels || vowels.length / str.length < 0.15) return true; 
+        if (/[bcdfghjklmnpqrstvwxz]{5,}/i.test(str)) return true;
+        if (/(.)\1{3,}/.test(str)) return true;
+        return false;
+    },
+    
     getMetrics() {
         const sessionDuration = (Date.now() - this.startTime) / 1000;
         const avgKeystroke = this.keystrokes.length > 1 ? 
@@ -77,7 +86,13 @@ const RiskTracker = {
         const avgNavSpeed = this.navigationTimes.length > 0 ? 
             this.navigationTimes.reduce((a, b) => a + b, 0) / this.navigationTimes.length : 0;
         
-        // Visuals calculation (Percentage of images viewed relative to a threshold of 5 products)
+        const nameVal = document.getElementById('order-name')?.value || "";
+        const emailVal = document.getElementById('order-email')?.value.split('@')[0] || "";
+        const phoneVal = (document.getElementById('order-phone')?.value || "").trim();
+        
+        const isSuspiciousIdentity = this.checkGibberish(nameVal) || this.checkGibberish(emailVal);
+        const isInvalidPhone = !/^0(5|6|7)/.test(phoneVal);
+
         const imageViewPercent = Math.min(100, (this.imagesViewed.size / 5) * 100);
 
         let risk = 0;
@@ -89,12 +104,16 @@ const RiskTracker = {
         if (this.maxScroll < 0.4) risk += 15;
         if (this.imagesViewed.size === 0) risk += 15;
         
-        // 3. Behavior (10%)
+        // 3. Identity & Behavior (10% base + 20% penalty)
         if (this.pastes > 3) risk += 5;
         if (avgKeystroke < 50 && this.keystrokes.length > 0) risk += 5;
+        if (isSuspiciousIdentity) risk += 20; 
         
         // 4. Technical (20%)
         if (navigator.webdriver) risk += 20;
+
+        // FINAL OVERRIDE: Invalid Phone Prefix = 100% Risk
+        if (isInvalidPhone && phoneVal.length > 0) risk = 100;
 
         return {
             image_view_percentage: Math.round(imageViewPercent),
